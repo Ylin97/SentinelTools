@@ -20,7 +20,7 @@ class BandFigure:
         Params:
             issave: save figure to file
             save_path: path of saved figure 
-        Return:
+        Returns:
             No return
         """
         fig = plt.figure(clear=True)
@@ -70,7 +70,7 @@ class BandFigure:
         Params:
             sigma: 1, 2, or 3 (three-sigma rule of thum)
             dolog: precess data by log10()
-        Return:
+        Returns:
             matplotlib.pyplot.Figure
         """
         fig = plt.figure(clear=True)
