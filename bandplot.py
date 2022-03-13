@@ -57,14 +57,6 @@ class BandFigure:
         # plt.margins(0, 0)
         if issave:
             self._save("all", save_path, dpi)
-            # if save_path:
-            #     if not os.path.exists(save_path):
-            #         os.makedirs(save_path)
-            #     plt.savefig(os.path.join(save_path, f"{self.band_name}_all.png"), dpi=dpi)
-            # else:
-            #     if not os.path.exists("Figure"):
-            #         os.mkdir("Figure")
-            #     plt.savefig("Figure/{}_all.png".format(self.band_name), dpi=dpi)
         return fig
 
     def plotfig(self, sigma=None, dolog=False, issave=False, 
@@ -89,14 +81,6 @@ class BandFigure:
         plt.axis("off")
         if issave:
             self._save("single", save_path, dpi)
-        #     if save_path:
-        #         if not os.path.exists(save_path):
-        #             os.makedirs(save_path)
-        #         plt.savefig(os.path.join(save_path, figname + '.png'), dpi=dpi)
-        #     else:
-        #         if not os.path.exists("Figure"):
-        #             os.mkdir("Figure")
-        #         plt.savefig("Figure/{}.png".format(figname), dpi=dpi)
         return fig
 
     def _norm_log(self, band_data: np.ndarray, sigma=None, dolog=False) -> np.ndarray:
@@ -179,9 +163,9 @@ if __name__ == "__main__":
     # img = fig.plotfig(sigma=2)
     # img = fig.plotfig(sigma=3, dolog=True)
     # img = fig.plotfig(issave=True)
-    # img = fig.plotfig(dolog=True, issave=True)
+    img = fig.plotfig(dolog=True, issave=True)
     # img = fig.plotfig(sigma=2, dolog=True, issave=True, save_path="Figure/single/1")
     # img = fig.plotall()
     # img = fig.plotall(issave=True)
-    img = fig.plotall(issave=True, save_path="Figure/all/1")
+    # img = fig.plotall(issave=True, save_path="Figure/all/2")
     plt.show()
