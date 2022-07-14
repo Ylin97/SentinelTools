@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 
 class BandFigure:
-    def __init__(self, band_pixels:np.array, band_name:str):
+    def __init__(self, band_pixels:np.array, band_name: str):
         """
         Params:
             band_pixels: a numpy.ndarray
@@ -18,7 +18,8 @@ class BandFigure:
         self.sigma     = 0
         self.dolog     = False
 
-    def plotall(self, issave=False, save_path=None, dpi=300)->plt.Figure:
+    def plotall(self, issave: bool=False, save_path: str=None,
+                dpi: int=300) -> plt.Figure:
         """
         Params:
             issave: save figure to file
@@ -59,8 +60,8 @@ class BandFigure:
             self._save("all", save_path, dpi)
         return fig
 
-    def plotfig(self, sigma=None, dolog=False, issave=False, 
-                save_path=None, dpi=300)->plt.Figure:
+    def plotfig(self, sigma: int=None, dolog: bool=False, issave: bool=False, 
+                save_path: str =None, dpi: int =300) -> plt.Figure:
         """
         Plot only one Figure
         Params:
@@ -83,7 +84,8 @@ class BandFigure:
             self._save("single", save_path, dpi)
         return fig
 
-    def _norm_log(self, band_data: np.ndarray, sigma=None, dolog=False) -> np.ndarray:
+    def _norm_log(self, band_data: np.ndarray, sigma: int=None,
+                  dolog: bool=False) -> np.ndarray:
         """Normalization and log10"""
         # row, col = dataset.shape
         self.sigma = sigma
@@ -110,7 +112,7 @@ class BandFigure:
             data_nl = self._norm_sigma(band_data, l_limit, r_limit)
         return data_nl
 
-    def _norm_sigma(self, band_data:np.ndarray, l_limit:float, r_limit:float):
+    def _norm_sigma(self, band_data: np.ndarray, l_limit: float, r_limit: float):
         """
         [l_limit, r_limit] -> [0, 1]
         Params:
@@ -119,18 +121,13 @@ class BandFigure:
             r_limit: right limit point for normalization
         """
         data = band_data.copy()
-        distance = r_limit - l_limit
-        for i in range(data.shape[0]):
-            for j in range(data.shape[1]):
-                if data[i, j] < l_limit:
-                    data[i, j] = l_limit / distance
-                elif data[i, j] < r_limit:
-                    data[i, j] /= distance
-                else:
-                    data[i, j] = r_limit / distance
+        # normalizing
+        data[data < l_limit] = l_limit / r_limit
+        data[(data >= l_limit) & (data < r_limit)] /= r_limit
+        data[data >= r_limit] = 1
         return data
 
-    def _save(self, fig_t:str, save_path:str, dpi=300):
+    def _save(self, fig_t: str, save_path: str, dpi=300):
         """Save figure to file"""
         figname = self.band_name
         if fig_t == "all":
@@ -163,9 +160,9 @@ if __name__ == "__main__":
     # img = fig.plotfig(sigma=2)
     # img = fig.plotfig(sigma=3, dolog=True)
     # img = fig.plotfig(issave=True)
-    img = fig.plotfig(dolog=True, issave=True)
+    # img = fig.plotfig(dolog=True, issave=True)
     # img = fig.plotfig(sigma=2, dolog=True, issave=True, save_path="Figure/single/1")
-    # img = fig.plotall()
+    img = fig.plotall()
     # img = fig.plotall(issave=True)
     # img = fig.plotall(issave=True, save_path="Figure/all/2")
     plt.show()

@@ -35,11 +35,11 @@ class Band:
         if data_path:
             self._init(data_path)
 
-    def _init(self, data_path:str):
+    def _init(self, data_path: str):
         self.read_hdr(os.path.join(data_path, f"{self.name}.hdr"))
         self.radar_pixels = self.read_img(os.path.join(data_path, f"{self.name}.img"))
 
-    def read_hdr(self, path:str):
+    def read_hdr(self, path: str):
         """read *.hdr file """
         w_s, h_s, mi_s, dt_s, bo_s = True, True, True, True, True
         with open(path, 'r') as fr:
@@ -71,7 +71,7 @@ class Band:
                     if m and m.group(1) in DATA_TYPES.keys():
                         self.data_t = DATA_TYPES[m.group(1)]; dt_s = False
 
-    def read_img(self, path:str) -> np.ndarray:
+    def read_img(self, path: str) -> np.ndarray:
         """read *.img file"""
         with open(path, 'rb') as fr:
             radar_data = []
