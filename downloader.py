@@ -1,46 +1,24 @@
+############################################################
+#
 # 需要挂代理才能加快下载速度，同时需要安装 pysocks 包来解析代理
-# 开启代理后需要设置环境变量： $env:all_proxy="socks5://127.0.0.1:port"
-# 取消代理命令：$env:all_proxy=""
-
+#
+############################################################
 import os
 import time
+from multiprocessing import Process, Value
 # sentinelsat中导入相关的模块
 from sentinelsat import SentinelAPI, read_geojson, geojson_to_wkt
 from sentinelsat.exceptions import LTATriggered, ServerError, InvalidChecksumError
 
 
-# 创建SentinelAPI，请使用哥白尼数据开放获取中心自己的用户名及密码
-# api =SentinelAPI('用户名', '密码','https://scihub.copernicus.eu/apihub/')
-api = SentinelAPI('kkkli', 'Acs2E%u6_GzHVkE', 'https://scihub.copernicus.eu/dhus')
-# api = SentinelAPI('kkkli', 'Acs2E%u6_GzHVkE', 'https://scihub.copernicus.eu/apihub/')
-
-city_name = "changsha"
-save_path = f"Products/{city_name}"
-
-if not os.path.exists(save_path):
-	os.makedirs(save_path)
-
-
-# 读入城市的geojson文件并转  换为wkt格式的文件对象，相当于足迹
-# 可以到此网址获取 http://geojson.io
-footprint =geojson_to_wkt(read_geojson(f'geojson/{city_name}_map.geojson'))
-
-# 设置代理环境变量
-os.environ["all_proxy"] = 'socks5://127.0.0.1:7890'
-
-# 通过设置OpenSearch API查询参数筛选符合条件的所有Sentinel-1L2A级数据
-products =api.query(footprint,            # Area范围
-		date=('20220101','20220201'),     # 搜索的日期范围
-		platformname='Sentinel-1',        # 卫星平台名，Sentinel-1                    
-		producttype='GRD',                # 产品数据等级，'S2MSI2A'表示S2-L2A级产品
-		orbitdirection='Ascending')       # 升降轨选择，Ascending 为升轨, Descending 为降轨        
-
-print("Total: {} products".format(len(products)))
-
-def download_data(product):
-	"""download data of sentinel"""
+def download_data(api: SentinelAPI, product):
+	"""download data of sentinel
+	Parameters:
+		api          : SentinelAPI
+		product      : Sentinel product that created by SentinelAPI.query()
+	"""
 	try:
-		#通过OData API获取单一产品数据的主要元数据信息
+		#通过 OData API 获取单一产品数据的主要元数据信息
 		product_info = api.get_product_odata(product)
 		print(product_info['title'])
 		#下载产品id为product的产品数据
@@ -58,42 +36,123 @@ def download_data(product):
 	else:
 		return 0
 
-MAX_TIMES = 3     # 最大尝试下载次数
-LTA_list = []     # Long Term Archivel 缓存
-remain_list = []  # 由于LTA配额限制导致无法暂时无法请求的产品（通常一小时后可以重新请求）
-# 通过for循环遍历并打印、下载出搜索到的产品文件名
-cnt = 1
-for product in products:
-	time_cnt = 0
-	print(cnt, end=": ")
-	while True:
-		if time_cnt >= MAX_TIMES:
-			break
 
-		res = download_data(product)
-		if res == 0:
-			cnt += 1
-			break
-		elif res == -1:
-			LTA_list.append(product)
-			break
-		time_cnt += 1
+def action(api: SentinelAPI, footprint: str, remain: Value):
+	"""下载主程序
+	Parameters:
+		api          : SentinelAPI
+		footprintf   : Well-Known Text string representation of the geometry 
+					   that created by sentinelsat.geojson_to_wkt()
+		remain       : Remain of products
+	"""
+	# 通过设置 OpenSearch API 查询参数筛选符合条件的所有 Sentinel-1L2A 级数据
+	products = api.query(footprint,             # Area 范围
+				date=('20220101','20220731'),   # 搜索的日期范围
+				platformname='Sentinel-1',      # 卫星平台名，Sentinel-1                    
+				producttype='GRD',              # 产品数据等级，'S2MSI2A'表示 S2-L2A 级产品
+				orbitdirection='Ascending')     # 升降轨选择，Ascending 为升轨, Descending 为降轨        
 
-# 等待 30 分钟再开始尝试重新下载 LTA 产品
-print("*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#")
-print("Waiting to download LTA products...")
-time.sleep(60 * 30)
-print("**********************************************************")
-print("Now try to download LTA products...")
-for product in LTA_list:
-	time_cnt = 0
-	print(cnt, end=": ")
-	while True:
-		if time_cnt >= MAX_TIMES:
-			break
-		
-		res = download_data(product)
-		if res == 0:
+	# global remain
+	remain.value = len(products)
+	print(f'remain in action: {remain.value}')
+	print("Total: {} products".format(len(products)))
+
+	MAX_TIMES = 3      # 最大尝试下载次数
+	LTA_list  = []     # Long Term Archivel 缓存
+	# 通过for循环遍历并打印、下载出搜索到的产品文件名
+	number = 1
+	for product in products:
+		cnt = 0
+		while True:
+			print(number, end=": ")
+			if cnt >= MAX_TIMES:
+				break
+
+			res = download_data(api, product)
+			if res == 0:
+				number += 1
+				remain.value -= 1;
+				break
+			elif res == -1:
+				LTA_list.append(product)
+				break
 			cnt += 1
-			break
-		time_cnt += 1
+		if (len(LTA_list) >= 20):  # LTA 单用户的产品配额为20, 需要隔一段时间才会重新分配
+			break;
+
+	if len(LTA_list) > 0:
+		# 等待 30 分钟再开始尝试重新下载 LTA 产品
+		print("\n*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#")
+		print("\033[34mWaiting to download LTA products... ({})\033[0m".format(
+							time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())))
+		time.sleep(60 * 30)
+		print("\n**********************************************************")
+		print("\033[34mNow try to download LTA products... ({})\033[0m".format(
+							time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())))
+		for product in LTA_list:
+			cnt = 0
+			while True:
+				print(number, end=": ")
+				if cnt >= MAX_TIMES:
+					break
+				
+				res = download_data(api, product)
+				if res == 0:
+					number += 1
+					remain.value -= 1
+					break
+				cnt += 1
+
+
+def check(api, footprint: str, remain):
+	""" 检查下载子进程是否存活
+	Parameters:
+		api          : SentinelAPI
+		footprintf   : Well-Known Text string representation of the geometry 
+					   that created by sentinelsat.geojson_to_wkt()
+		remain       : Remain of products
+	"""
+	# '下载'子进程
+	download_process = Process(target=action, args=(api, footprint, remain))
+	download_process.start()
+	while remain.value > 0:
+		if not download_process.is_alive():
+			print("\n\033[1;33mWARN: Creating a new subprocessing now!\033[0m")
+			download_process.close()
+			download_process = Process(target=action, args=(api, footprint, remain))
+			download_process.start()
+		# print(f'remain in check: {remain.value}')
+		time.sleep(60 * 2)   # 每2分钟检查一次下载进程是否存活
+	print("\nAll products downloaded successfully.\n\n--Bye.")
+	download_process.close()
+
+
+if __name__ == '__main__':
+
+	# 创建SentinelAPI, 请使用哥白尼数据开放获取中心自己的用户名及密码
+	# api = SentinelAPI('用户名', '密码','https://scihub.copernicus.eu/apihub/')
+	# api = SentinelAPI('kkkli', 'Acs2E%u6_GzHVkE', 'https://scihub.copernicus.eu/apihub/')
+	api = SentinelAPI('kkkli', 'Acs2E%u6_GzHVkE', 'https://scihub.copernicus.eu/dhus')
+
+	# 城市名和文件保存路径设置
+	city_name = "wulumuqi"
+	save_path = f"Products/{city_name}"
+
+	if not os.path.exists(save_path):
+		os.makedirs(save_path)
+
+	# 读入城市的 geojson 文件并转  换为 wkt 格式的文件对象，相当于足迹
+	# 可以到此网址获取 http://geojson.io
+	footprint = geojson_to_wkt(read_geojson(f'geojson/{city_name}_map.geojson'))
+
+	# 设置代理环境变量
+	os.environ["all_proxy"] = 'socks5://127.0.0.1:20170'
+
+	# 剩余的产品数量 (初始化为1，使之进入 check() 函数的 while 循环)
+	remain = Value('i', 1)
+
+	# '检查'子进程
+	check_process = Process(target=check, args=(api, footprint, remain))
+	check_process.start()
+	
+
