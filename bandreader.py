@@ -4,17 +4,17 @@ import numpy as np
 
 
 DATA_TYPES = {
-    "1":  "int8",
-    "2":  "int16",
-    "3":  "int32",
-    "4":  "float32",
-    "5":  "double64",
-    "6":  "complex_float32_float32",
-    "9":  "complex_double64_double64",
-    "12": "unsigned_int16",
-    "13": "unsigned_int32",
-    "14": "unsigned_int64",
-    "15": "unsigned_int64"
+    "1": [1, "int8"],
+    "2": [2, "int16"],
+    "3": [4, "int32"],
+    "4": [4, "float32"],
+    "5": [8, "double64"],
+    "6": [8, "complex_float32_float32"],
+    "9": [16, "complex_double64_double64"],
+    "12": [2, "unsigned_int16"],
+    "13": [4, "unsigned_int32"],
+    "14": [8, "unsigned_int64"],
+    "15": [8, "unsigned_int64"]
  }
 
 class Band:
@@ -35,11 +35,11 @@ class Band:
         if data_path:
             self._init(data_path)
 
-    def _init(self, data_path: str):
+    def _init(self, data_path: str) -> None:
         self.read_hdr(os.path.join(data_path, f"{self.name}.hdr"))
         self.radar_pixels = self.read_img(os.path.join(data_path, f"{self.name}.img"))
 
-    def read_hdr(self, path: str):
+    def read_hdr(self, path: str) -> None:
         """read *.hdr file """
         w_s, h_s, mi_s, dt_s, bo_s = True, True, True, True, True
         with open(path, 'r') as fr:
@@ -78,10 +78,10 @@ class Band:
             for i in range(self.height):
                 line_data = []
                 for j in range(self.width):
-                    pixel = fr.read(2)
+                    pixel = fr.read(self.data_t[0])
                     line_data.append(float(int.from_bytes(pixel, byteorder=self.byte_order)))
                 radar_data.append(line_data)
-        radar_data = np.array(radar_data, dtype=np.float32)
+        radar_data = np.array(radar_data, dtype=np.float64)
         # print(radar_data.shape)
         return radar_data
 

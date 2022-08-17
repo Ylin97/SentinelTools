@@ -1,17 +1,16 @@
-from fileinput import filename
 import os
 import numpy as np
 import matplotlib.pyplot as plt
 
 
 class BandFigure:
-    def __init__(self, band_pixels:np.array, band_name: str):
+    def __init__(self, band_pixels: np.array, band_name: str):
         """
         Params:
             band_pixels: a numpy.ndarray
             band_name: such as 'Intensity_VV' or 'Amplitude_VH'
         Return:
-            No return 
+            None 
         """
         self.pixels    = band_pixels
         self.band_name = band_name
@@ -39,7 +38,7 @@ class BandFigure:
         plt.subplot(3, 2, 4)
         data_nl = self._norm_log(self.pixels, 3, dolog=True)
         plt.imshow(data_nl, cmap=plt.cm.gray)
-        plt.title(f"{self.band_name} 3sigma log-norm")
+        plt.title(f"{self.band_name} 3sigma-log norm")
         plt.axis("off")
         # no log and no sigma
         plt.subplot(3, 2, 5)
@@ -51,7 +50,7 @@ class BandFigure:
         plt.subplot(3, 2, 6)
         data_nl = self._norm_log(self.pixels, dolog=True)
         plt.imshow(data_nl, cmap=plt.cm.gray)
-        plt.title(f"{self.band_name} log-norm")
+        plt.title(f"{self.band_name} log norm")
         plt.axis("off")
         plt.suptitle(f"{self.band_name}", fontweight='bold', fontsize=16)
         plt.subplots_adjust(bottom=0.025)
@@ -112,7 +111,8 @@ class BandFigure:
             data_nl = self._norm_sigma(band_data, l_limit, r_limit)
         return data_nl
 
-    def _norm_sigma(self, band_data: np.ndarray, l_limit: float, r_limit: float):
+    def _norm_sigma(self, band_data: np.ndarray, l_limit: float,
+                    r_limit: float) -> np.ndarray:
         """
         [l_limit, r_limit] -> [0, 1]
         Params:
@@ -127,7 +127,7 @@ class BandFigure:
         data[data >= r_limit] = 1
         return data
 
-    def _save(self, fig_t: str, save_path: str, dpi=300):
+    def _save(self, fig_t: str, save_path: str, dpi=300) -> None:
         """Save figure to file"""
         figname = self.band_name
         if fig_t == "all":
