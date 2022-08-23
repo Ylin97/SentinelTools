@@ -1,5 +1,6 @@
 import re
 import os
+import struct
 import numpy as np
 
 
@@ -8,13 +9,13 @@ DATA_TYPES = {
     "2": [2, "int16"],
     "3": [4, "int32"],
     "4": [4, "float32"],
-    "5": [8, "double64"],
-    "6": [8, "complex_float32_float32"],
-    "9": [16, "complex_double64_double64"],
-    "12": [2, "unsigned_int16"],
-    "13": [4, "unsigned_int32"],
-    "14": [8, "unsigned_int64"],
-    "15": [8, "unsigned_int64"]
+    "5": [8, "float64"],
+    "6": [8, "complex64"],
+    "9": [16, "complex128"],
+    "12": [2, "uint16"],
+    "13": [4, "uint32"],
+    "14": [8, "uint64"],
+    "15": [8, "uint64"]
  }
 
 class Band:
@@ -75,11 +76,14 @@ class Band:
         """read *.img file"""
         with open(path, 'rb') as fr:
             radar_data = []
+            dt = np.dtype(self.data_t[1])
+            if self.byte_order == "big":
+                dt = dt.newbyteorder('>')
+            else:
+                dt = dt.newbyteorder('<')
             for i in range(self.height):
-                line_data = []
-                for j in range(self.width):
-                    pixel = fr.read(self.data_t[0])
-                    line_data.append(float(int.from_bytes(pixel, byteorder=self.byte_order)))
+                buf = fr.read(self.width * self.data_t[0])
+                line_data = np.frombuffer(buf, dtype=dt)
                 radar_data.append(line_data)
         radar_data = np.array(radar_data, dtype=np.float64)
         # print(radar_data.shape)
