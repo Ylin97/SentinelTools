@@ -1,6 +1,5 @@
 import re
 import os
-import struct
 import numpy as np
 
 
@@ -19,13 +18,14 @@ DATA_TYPES = {
  }
 
 class Band:
-    """Sentine Product band"""
+    """
+    Sentine Product band
+
+    Parameters:
+        data_path: `*.data` folder's path;
+        band_name: name of band
+    """
     def __init__(self, data_path=None, band_name=None) -> None:
-        """
-        Params:
-            data_path: *.data folder's path;
-            band_name: name of a band
-        """
         self.name         = band_name
         self.radar_pixels = None
         self.width        = None
@@ -41,14 +41,18 @@ class Band:
         self.radar_pixels = self.read_img(os.path.join(data_path, f"{self.name}.img"))
 
     def read_hdr(self, path: str) -> None:
-        """read *.hdr file """
+        """
+        read *.hdr file
+
+        Parameters:
+            path: `.hdr` file's path
+        Return:
+            None
+        """
         w_s, h_s, mi_s, dt_s, bo_s = True, True, True, True, True
         with open(path, 'r') as fr:
             img_info = fr.readlines()
             for line in img_info:
-                # if nm_s:
-                #     m = re.match(r"band names = {\s*(.*?)\s*}", line)
-                #     self.name = m.group(1) if m else ""; nm_s = False
                 if w_s:
                     m = re.match(r"samples = (\d+)", line)
                     if m:
@@ -73,7 +77,14 @@ class Band:
                         self.data_t = DATA_TYPES[m.group(1)]; dt_s = False
 
     def read_img(self, path: str) -> np.ndarray:
-        """read *.img file"""
+        """
+        read *.img file
+
+        Parameters:
+            path: `.img` file's path
+        Return:
+            None
+        """
         with open(path, 'rb') as fr:
             radar_data = []
             dt = np.dtype(self.data_t[1])

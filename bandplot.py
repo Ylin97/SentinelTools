@@ -4,14 +4,13 @@ import matplotlib.pyplot as plt
 
 
 class BandFigure:
+    """
+    Parameters
+    ----------
+        - band_pixels : numpy.ndarray
+        - band_name : such as `Intensity_VV` or `Amplitude_VH` 
+    """
     def __init__(self, band_pixels: np.array, band_name: str):
-        """
-        Params:
-            band_pixels: a numpy.ndarray
-            band_name: such as 'Intensity_VV' or 'Amplitude_VH'
-        Return:
-            None 
-        """
         self.pixels    = band_pixels
         self.band_name = band_name
         self.sigma     = 0
@@ -20,11 +19,14 @@ class BandFigure:
     def plotall(self, issave: bool=False, save_path: str=None,
                 dpi: int=300) -> plt.Figure:
         """
-        Params:
-            issave: save figure to file
-            save_path: path of saved figure 
-        Returns:
-            No return
+        Parameters
+        ------
+            - issave : save figure to file
+            - save_path : path of saved figure 
+
+        Returns
+        ------
+            matplotlib.pyplot.Figure
         """
         fig = plt.figure(clear=True)
         # with sigma
@@ -63,10 +65,14 @@ class BandFigure:
                 save_path: str =None, dpi: int =300) -> plt.Figure:
         """
         Plot only one Figure
-        Params:
-            sigma: 1, 2, or 3 (three-sigma rule of thum)
-            dolog: precess data by log10()
-        Returns:
+
+        Parameters:
+        -----------
+            - sigma : 1, 2, or 3 (three-sigma rule of thum)
+            - dolog : precess data by log10()
+
+        Returns
+        -------
             matplotlib.pyplot.Figure
         """
         fig = plt.figure(clear=True)
@@ -115,10 +121,16 @@ class BandFigure:
                     r_limit: float) -> np.ndarray:
         """
         [l_limit, r_limit] -> [0, 1]
-        Params:
+
+        Parameters
+        -----------
             band_data: A band's pixels (numpy.ndarray) 
             l_limit: left limit point for normalization
             r_limit: right limit point for normalization
+        
+        Returns
+        -------
+        numpy.ndarray
         """
         data = band_data.copy()
         # normalizing
@@ -147,8 +159,8 @@ class BandFigure:
 if __name__ == "__main__":
     from bandreader import *
 
-    # data_path = "data/subset_0_of_S1A_IW_GRDH_1SDV_20220131T105217_20220131T105242_041704_04F64F_C18D_Orb_Spk2.data/"
-    data_path = "data/subset_0_of_S1A_IW_GRDH_1SDV_20220131T105217_20220131T105242_041704_04F64F_C18D_Orb.data/"
+    data_path = "data/subset_0_of_S1A_IW_GRDH_1SDV_20220131T105217_20220131T105242_041704_04F64F_C18D_Orb_Spk2.data/"
+    # data_path = "data/subset_0_of_S1A_IW_GRDH_1SDV_20220131T105217_20220131T105242_041704_04F64F_C18D_Orb.data/"
     # band1 = Band()
     # band1.read_hdr("data/subset_0_of_S1A_IW_GRDH_1SDV_20220131T105217_20220131T105242_041704_04F64F_C18D_Orb.data/Amplitude_VV.hdr")
     # print(band1.height)
