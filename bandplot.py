@@ -95,6 +95,7 @@ class BandFigure:
         # row, col = dataset.shape
         self.sigma = sigma
         if dolog:
+            band_data[band_data == 0] = 1 
             band_data  = np.log10(band_data)
             self.dolog = True
         
