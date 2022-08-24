@@ -125,9 +125,9 @@ class BandFigure:
 
         Parameters
         -----------
-            band_data: A band's pixels (numpy.ndarray) 
-            l_limit: left limit point for normalization
-            r_limit: right limit point for normalization
+            - band_data : A band's pixels (numpy.ndarray) 
+            - l_limit : left limit point for normalization
+            - r_limit : right limit point for normalization
         
         Returns
         -------

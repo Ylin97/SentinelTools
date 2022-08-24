@@ -21,9 +21,10 @@ class Band:
     """
     Sentine Product band
 
-    Parameters:
-        data_path: `*.data` folder's path;
-        band_name: name of band
+    Parameters
+    ----------
+        - data_path : `*.data` folder's path;
+        - band_name : name of band
     """
     def __init__(self, data_path=None, band_name=None) -> None:
         self.name         = band_name
@@ -44,9 +45,12 @@ class Band:
         """
         read *.hdr file
 
-        Parameters:
-            path: `.hdr` file's path
-        Return:
+        Parameters
+        ----------
+            path : `.hdr` file's path
+
+        Return
+        ------
             None
         """
         w_s, h_s, mi_s, dt_s, bo_s = True, True, True, True, True
@@ -81,9 +85,12 @@ class Band:
         """
         read *.img file
 
-        Parameters:
+        Parameters
+        ----------
             path: `.img` file's path
-        Return:
+        
+        Return
+        ------
             None
         """
         with open(path, 'rb') as fr:
