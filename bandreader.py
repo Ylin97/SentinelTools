@@ -68,7 +68,8 @@ class Band:
                 if bo_s:
                     m = re.match(r"byte order = (\d)", line)
                     if m:
-                        self.byte_order = "big" if m.group(1) == '1' else "little"; bo_s = False
+                        self.byte_order = "big" if m.group(1) == '1' else "little"
+                        bo_s = False
                     else:
                         self.byte_order = "big"
                 if dt_s:
@@ -86,19 +87,17 @@ class Band:
             None
         """
         with open(path, 'rb') as fr:
-            radar_data = []
             dt = np.dtype(self.data_t[1])
             if self.byte_order == "big":
                 dt = dt.newbyteorder('>')
             else:
                 dt = dt.newbyteorder('<')
-            for i in range(self.height):
-                buf = fr.read(self.width * self.data_t[0])
-                line_data = np.frombuffer(buf, dtype=dt)
-                radar_data.append(line_data)
+        
+            buf = fr.read(self.width * self.height * self.data_t[0])
+            radar_data = np.frombuffer(buf, dtype=dt)
         radar_data = np.array(radar_data, dtype=np.float64)
         # print(radar_data.shape)
-        return radar_data
+        return radar_data.reshape(self.height, self.width)
 
 
 if __name__ == "__main__":
