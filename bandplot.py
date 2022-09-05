@@ -89,7 +89,7 @@ class BandFigure:
             self._save("single", save_path, dpi)
         return fig
 
-    def show(*args, **kwargs):
+    def show(self, *args, **kwargs):
         """
         Display all open figures.
 
@@ -207,13 +207,13 @@ if __name__ == "__main__":
     from bandreader import *
 
     # data_path = "data/subset_0_of_S1A_IW_GRDH_1SDV_20220131T105217_20220131T105242_041704_04F64F_C18D_Orb_Spk2.data/"
-    data_path = "data/subset_0_of_S1A_IW_GRDH_1SDV_20220131T105217_20220131T105242_041704_04F64F_C18D_Orb.data/"
+    data_path = "data/Subset_S1A_IW_GRDH_1SDV_20210104T120201_20210104T120226_035988_043750_93DF.data/"
     # band1 = Band()
     # band1.read_hdr("data/subset_0_of_S1A_IW_GRDH_1SDV_20220131T105217_20220131T105242_041704_04F64F_C18D_Orb.data/Amplitude_VV.hdr")
     # print(band1.height)
-    band2 = Band(data_path, "Amplitude_VV")
+    band2 = Band(data_path, "Intensity_VV")
     print(band2.byte_order)
-    fig = BandFigure(band2.radar_pixels, "Amplitude_VV")
+    fig = BandFigure(band2.radar_pixels, "Intensity_VV")
 
     # img = fig.plotfig()
     # img = fig.plotfig(sigma=2)
@@ -222,6 +222,7 @@ if __name__ == "__main__":
     # img = fig.plotfig(dolog=True, issave=True)
     # img = fig.plotfig(sigma=2, dolog=True, issave=True, save_path="Figure/single/1")
     img = fig.plotall()
+    fig.show()
     # img = fig.plotall(issave=True)
     # img = fig.plotall(issave=True, save_path="Figure/all/2")
     # plt.show()
