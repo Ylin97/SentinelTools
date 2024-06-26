@@ -1,14 +1,11 @@
-############################################################
-#
 # 需要挂代理才能加快下载速度，同时需要安装 pysocks 包来解析代理
-#
-############################################################
+
 import os
 import time
 from multiprocessing import Process, Value
 # sentinelsat中导入相关的模块
 from sentinelsat import SentinelAPI, read_geojson, geojson_to_wkt
-from sentinelsat.exceptions import LTATriggered, ServerError, InvalidChecksumError
+from sentinelsat.exceptions import LTATriggered, ServerError, InvalidChecksumError, LTAError
 
 
 def download_data(api: SentinelAPI, product):
@@ -30,6 +27,9 @@ def download_data(api: SentinelAPI, product):
 	except (InvalidChecksumError, ServerError):
 		time.sleep(3)
 		return -2
+	except LTAError:
+		time.sleep(3)
+		return -3
 	# except Exception:
 	# 	time.sleep(5)
 	# 	return -2
@@ -47,7 +47,7 @@ def action(api: SentinelAPI, footprint: str, remain: Value):
 	"""
 	# 通过设置 OpenSearch API 查询参数筛选符合条件的所有 Sentinel-1L2A 级数据
 	products = api.query(footprint,             # Area 范围
-				date=('20220101','20220731'),   # 搜索的日期范围
+				date=('20210101','20220831'),   # 搜索的日期范围
 				platformname='Sentinel-1',      # 卫星平台名，Sentinel-1                    
 				producttype='GRD',              # 产品数据等级，'S2MSI2A'表示 S2-L2A 级产品
 				orbitdirection='Ascending')     # 升降轨选择，Ascending 为升轨, Descending 为降轨        
@@ -57,51 +57,69 @@ def action(api: SentinelAPI, footprint: str, remain: Value):
 	print(f'remain in action: {remain.value}')
 	print("Total: {} products".format(len(products)))
 
+	if products:
+		product_ids = list(products.keys())
+	else:
+		return
+
 	MAX_TIMES = 3      # 最大尝试下载次数
 	LTA_list  = []     # Long Term Archivel 缓存
 	# 通过for循环遍历并打印、下载出搜索到的产品文件名
+	is_LTA_limit = False
 	number = 1
-	for product in products:
-		cnt = 0
-		while True:
-			print(number, end=": ")
-			if cnt >= MAX_TIMES:
-				break
-
-			res = download_data(api, product)
-			if res == 0:
-				number += 1
-				remain.value -= 1;
-				break
-			elif res == -1:
-				LTA_list.append(product)
-				break
-			cnt += 1
-		if (len(LTA_list) >= 20):  # LTA 单用户的产品配额为20, 需要隔一段时间才会重新分配
-			break;
-
-	if len(LTA_list) > 0:
-		# 等待 30 分钟再开始尝试重新下载 LTA 产品
-		print("\n*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#")
-		print("\033[34mWaiting to download LTA products... ({})\033[0m".format(
-							time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())))
-		time.sleep(60 * 30)
-		print("\n**********************************************************")
-		print("\033[34mNow try to download LTA products... ({})\033[0m".format(
-							time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())))
-		for product in LTA_list:
+	while product_ids:
+		for current_id in product_ids:
 			cnt = 0
 			while True:
 				print(number, end=": ")
 				if cnt >= MAX_TIMES:
 					break
-				
-				res = download_data(api, product)
+
+				res = download_data(api, current_id)
 				if res == 0:
 					number += 1
-					remain.value -= 1
+					remain.value -= 1;
+					product_ids.remove(current_id)
+					break
+				elif res == -1:
+					LTA_list.append(current_id)
+					break
+				elif res == -3:
+					is_LTA_limit = True
 					break
 				cnt += 1
+			if (len(LTA_list) >= 20 or is_LTA_limit):  # LTA 单用户的产品配额为20, 需要隔一段时间才会重新分配
+				break;
+
+		remain_dl_times = 3   # 对于 LAT 产品的最大尝试下载次数
+		while LTA_list  and remain_dl_times > 0:
+			# 等待 30 分钟再开始尝试重新下载 LTA 产品
+			print("\n*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#")
+			print("\033[34mWaiting to download LTA products... ({})\033[0m".format(
+								time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())))
+			time.sleep(60 * 30)
+			print("\n**********************************************************")
+			print("\033[34mNow try to download LTA products... ({})\033[0m".format(
+								time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())))
+			tmp_list = LTA_list.copy()
+			for current_id in tmp_list:
+				cnt = 0
+				while True:
+					print(number, end=": ")
+					if cnt >= MAX_TIMES:
+						break
+					
+					res = download_data(api, current_id)
+					if res == 0:
+						number += 1
+						remain.value -= 1
+						LTA_list.remove(current_id)
+						product_ids.remove(current_id)
+						break
+					elif res == -1:
+						break;
+					cnt += 1
+			remain_dl_times -= 1
 
 
 def check(api, footprint: str, remain):
@@ -135,18 +153,18 @@ if __name__ == '__main__':
 	api = SentinelAPI('kkkli', 'Acs2E%u6_GzHVkE', 'https://scihub.copernicus.eu/dhus')
 
 	# 城市名和文件保存路径设置
-	city_name = "wulumuqi"
+	city_name = "changsha"
 	save_path = f"Products/{city_name}"
 
 	if not os.path.exists(save_path):
 		os.makedirs(save_path)
 
 	# 读入城市的 geojson 文件并转  换为 wkt 格式的文件对象，相当于足迹
-	# 可以到此网址获取 http://geojson.io
+	# 可以到此网址获取 https://geojson.io
 	footprint = geojson_to_wkt(read_geojson(f'geojson/{city_name}_map.geojson'))
 
 	# 设置代理环境变量
-	os.environ["all_proxy"] = 'socks5://127.0.0.1:20170'
+	# os.environ["all_proxy"] = 'socks5://127.0.0.1:20170'
 
 	# 剩余的产品数量 (初始化为1，使之进入 check() 函数的 while 循环)
 	remain = Value('i', 1)
