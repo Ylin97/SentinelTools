@@ -1,0 +1,5 @@
+这里有两种方式对Sentinel产品数据进行裁剪：
+
+    方式一：运行 dataCropping_snap.sh，调用 SNAP 的命令行工具 gpt 来进行裁剪（推荐！！），该方法需要先通过 SNAP 制作一个流程图文件，例如这里的 SangGenDaLai_Lake1.xml。更多关于流程图的使用可以参考这篇博客：https://blog.csdn.net/lidahuilidahui/article/details/105443366
+    
+    方式二：运行 dataCropping_medusa.sh 通过 sentinel_crop 调用 gdal 工具进行裁剪。
