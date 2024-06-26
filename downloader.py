@@ -148,9 +148,8 @@ def check(api, footprint: str, remain):
 if __name__ == '__main__':
 
 	# 创建SentinelAPI, 请使用哥白尼数据开放获取中心自己的用户名及密码
-	# api = SentinelAPI('用户名', '密码','https://scihub.copernicus.eu/apihub/')
-	# api = SentinelAPI('kkkli', 'Acs2E%u6_GzHVkE', 'https://scihub.copernicus.eu/apihub/')
-	api = SentinelAPI('kkkli', 'Acs2E%u6_GzHVkE', 'https://scihub.copernicus.eu/dhus')
+	# api = SentinelAPI('用户名', '密码', 'https://scihub.copernicus.eu/apihub/')
+	api = SentinelAPI('用户名', '密码', 'https://scihub.copernicus.eu/dhus')
 
 	# 城市名和文件保存路径设置
 	city_name = "changsha"
